@@ -29,7 +29,7 @@ namespace ParseExcelToSqlite
                     });
 
                     // Assuming data is in the first sheet
-                    dt = result.Tables[0].copy();
+                    dt = result.Tables[0].Copy();
                 }
             }
 
@@ -90,6 +90,7 @@ namespace ParseExcelToSqlite
                         }
                         //cmd.Parameters.AddWithValue("@Rural", row[7]);         // Column H
                         //cmd.Parameters.AddWithValue("@Lituraneo", row[8]);     // Column I
+                        Console.WriteLine($"Distrito: {row[0]}, Concelho: {row[2]}, Freguesia: {row[5]}, População: {row[6]}, Litorânea: {row[7]}");
 
                         cmd.ExecuteNonQuery();
                     }
