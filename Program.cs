@@ -29,7 +29,7 @@ namespace ParseExcelToSqlite
                     });
 
                     // Assuming data is in the first sheet
-                    dt = result.Tables[0];
+                    dt = result.Tables[0].copy();
                 }
             }
 
@@ -39,15 +39,15 @@ namespace ParseExcelToSqlite
 
                 // Create the table if it doesn't exist
                 string createTableQuery = @"CREATE TABLE IF NOT EXISTS DistritosConcelhosFreguesias (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     CodDistrito TEXT,
                     NomeDistrito TEXT,
                     CodConcelho TEXT,
                     NomeConcelho TEXT,
                     CodFreguesia TEXT,
                     NomeFreguesia TEXT,
-                    Pop2011 INTEGER,
-                    Rural TEXT,
-                    Lituraneo TEXT
+                    Populacao INTEGER,
+                    FreguesiaLitoranea BOOLEAN
                 )";
 
                 using (SQLiteCommand cmd = new SQLiteCommand(createTableQuery, sqliteConnection))
@@ -55,13 +55,14 @@ namespace ParseExcelToSqlite
                     cmd.ExecuteNonQuery();
                 }
 
+                
                 // Insert data into the SQLite database
                 foreach (DataRow row in dt.Rows)
                 {
                     string insertQuery = @"INSERT INTO DistritosConcelhosFreguesias 
-                        (CodDistrito, NomeDistrito, CodConcelho, NomeConcelho, CodFreguesia, NomeFreguesia, Pop2011, Rural, Lituraneo) 
+                        (CodDistrito, NomeDistrito, CodConcelho, NomeConcelho, CodFreguesia, NomeFreguesia, Populacao, FreguesiaLitoranea) 
                         VALUES 
-                        (@CodDistrito, @NomeDistrito, @CodConcelho, @NomeConcelho, @CodFreguesia, @NomeFreguesia, @Pop2011, @Rural, @Lituraneo)";
+                        (@CodDistrito, @NomeDistrito, @CodConcelho, @NomeConcelho, @CodFreguesia, @NomeFreguesia, @Populacao, @FreguesiaLitoranea)";
 
                     using (SQLiteCommand cmd = new SQLiteCommand(insertQuery, sqliteConnection))
                     {
@@ -72,9 +73,23 @@ namespace ParseExcelToSqlite
                         cmd.Parameters.AddWithValue("@NomeConcelho", row[3]);  // Column D
                         cmd.Parameters.AddWithValue("@CodFreguesia", row[4]);  // Column E
                         cmd.Parameters.AddWithValue("@NomeFreguesia", row[5]); // Column F
-                        cmd.Parameters.AddWithValue("@Pop2011", row[6]);       // Column G
-                        cmd.Parameters.AddWithValue("@Rural", row[7]);         // Column H
-                        cmd.Parameters.AddWithValue("@Lituraneo", row[8]);     // Column I
+                        cmd.Parameters.AddWithValue("@Populacao", row[6]);       // Column G
+                        
+
+                        var value = row[7];
+
+                        // Handle potential null value and check if it equals "S"
+                        if (value != DBNull.Value)
+                        {
+                            cmd.Parameters.AddWithValue("@FreguesiaLitoranea", false);
+                            
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue("@FreguesiaLitoranea", true);
+                        }
+                        //cmd.Parameters.AddWithValue("@Rural", row[7]);         // Column H
+                        //cmd.Parameters.AddWithValue("@Lituraneo", row[8]);     // Column I
 
                         cmd.ExecuteNonQuery();
                     }
