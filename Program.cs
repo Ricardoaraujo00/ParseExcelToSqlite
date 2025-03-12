@@ -10,7 +10,7 @@ namespace ParseExcelToSqlite
     {
         static void Main(string[] args)
         {
-            string excelFilePath = @"D:\Users\RicardoAraujo\Downloads\DistritosConcelhosFreguesias_CAOP2013_Populacao_Censos2011.xls";
+            string excelFilePath = @"D:\Users\RicardoAraujo\Downloads\DistritosConcelhosFreguesias_CAOP2013_Populacao_Censos2011.xlsx";
             string sqliteConnectionString = @"Data Source=DistritosConcelhosFreguesias.db;Version=3;";
 
             // Register the ExcelDataReader encoding provider (required for reading Excel files)
@@ -23,6 +23,7 @@ namespace ParseExcelToSqlite
             {
                 using (var reader = ExcelReaderFactory.CreateReader(stream))
                 {
+                    Console.WriteLine($"Total de linhas no ficheiro Excel: {reader.RowCount}");
                     var result = reader.AsDataSet(new ExcelDataSetConfiguration()
                     {
                         ConfigureDataTable = (_) => new ExcelDataTableConfiguration() { UseHeaderRow = true }
@@ -55,7 +56,7 @@ namespace ParseExcelToSqlite
                     cmd.ExecuteNonQuery();
                 }
 
-                
+                Console.WriteLine($"Total de linhas lidas: {dt.Rows.Count}");
                 // Insert data into the SQLite database
                 foreach (DataRow row in dt.Rows)
                 {
@@ -67,10 +68,27 @@ namespace ParseExcelToSqlite
                     using (SQLiteCommand cmd = new SQLiteCommand(insertQuery, sqliteConnection))
                     {
                         // Using column indexes (0-based)
+                        string cellValue = row[0].ToString();
+                        //Console.WriteLine($"Valor da célula: {cellValue}");
+                        if (!string.IsNullOrEmpty(cellValue))
+                        {
+                            row[0] = cellValue.Replace("'", "");
+                        }
+                        //Console.WriteLine($"Valor da row[0]: {row[0].ToString()}");
                         cmd.Parameters.AddWithValue("@CodDistrito", row[0]);  // Column A
                         cmd.Parameters.AddWithValue("@NomeDistrito", row[1]);  // Column B
+                        cellValue = row[2].ToString();
+                        if (!string.IsNullOrEmpty(cellValue))
+                        {
+                            row[2] = cellValue.Replace("'", "");
+                        }
                         cmd.Parameters.AddWithValue("@CodConcelho", row[2]);   // Column C
                         cmd.Parameters.AddWithValue("@NomeConcelho", row[3]);  // Column D
+                        cellValue = row[4].ToString();
+                        if (!string.IsNullOrEmpty(cellValue))
+                        {
+                            row[4] = cellValue.Replace("'", "");
+                        }
                         cmd.Parameters.AddWithValue("@CodFreguesia", row[4]);  // Column E
                         cmd.Parameters.AddWithValue("@NomeFreguesia", row[5]); // Column F
                         cmd.Parameters.AddWithValue("@Populacao", row[6]);       // Column G
@@ -90,7 +108,7 @@ namespace ParseExcelToSqlite
                         }
                         //cmd.Parameters.AddWithValue("@Rural", row[7]);         // Column H
                         //cmd.Parameters.AddWithValue("@Lituraneo", row[8]);     // Column I
-                        Console.WriteLine($"Distrito: {row[0]}, Concelho: {row[2]}, Freguesia: {row[5]}, População: {row[6]}, Litorânea: {row[7]}");
+                        //Console.WriteLine($"Distrito: {row[0]}, Concelho: {row[2]}, Freguesia: {row[5]}, População: {row[6]}, Litorânea: {row[7]}");
 
                         cmd.ExecuteNonQuery();
                     }
