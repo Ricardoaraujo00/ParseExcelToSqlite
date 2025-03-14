@@ -73,29 +73,20 @@ namespace ParseExcelToSqlite.Services
                     using (SQLiteCommand cmd = new SQLiteCommand(insertQuery, sqliteConnection))
                     {
                         // Using column indexes (0-based)
-                        string cellValue = row[0].ToString();
+                        row[0] = row[0] != null ? row[0].ToString().Replace("'", "") : "";
                         //Console.WriteLine($"Valor da célula: {cellValue}");
-                        if (!string.IsNullOrEmpty(cellValue))
-                        {
-                            row[0] = cellValue.Replace("'", "");
-                        }
                         //Console.WriteLine($"Valor da row[0]: {row[0].ToString()}");
                         cmd.Parameters.AddWithValue("@CodDistrito", row[0]);  // Column A
                         cmd.Parameters.AddWithValue("@NomeDistrito", row[1]);  // Column B
-                        cellValue = row[2].ToString();
-                        if (!string.IsNullOrEmpty(cellValue))
-                        {
-                            row[2] = cellValue.Replace("'", "");
-                        }
+
+                        row[2] = row[2] != null ? row[2].ToString().Replace("'", "") : "";
                         cmd.Parameters.AddWithValue("@CodConcelho", row[2]);   // Column C
                         cmd.Parameters.AddWithValue("@NomeConcelho", row[3]);  // Column D
-                        cellValue = row[4].ToString();
-                        if (!string.IsNullOrEmpty(cellValue))
-                        {
-                            row[4] = cellValue.Replace("'", "");
-                        }
+                        
+                        row[4] = row[4] != null ? row[4].ToString().Replace("'", "") : "";
                         cmd.Parameters.AddWithValue("@CodFreguesia", row[4]);  // Column E
                         cmd.Parameters.AddWithValue("@NomeFreguesia", row[5]); // Column F
+                        row[6] = row[6] != DBNull.Value ? row[6] : 0;
                         cmd.Parameters.AddWithValue("@Populacao", row[6]);       // Column G
                         
 

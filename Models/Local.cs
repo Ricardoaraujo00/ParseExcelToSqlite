@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InovarNasDecisoes.Shared.Models
+namespace ParseExcelToSqlite.Models
 {
     public class Local
     {
