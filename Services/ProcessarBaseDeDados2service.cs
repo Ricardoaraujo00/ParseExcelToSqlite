@@ -69,12 +69,12 @@ namespace ParseExcelToSqlite.Services
                     using (SQLiteCommand cmd = new SQLiteCommand(insertQuery, sqliteConnection))
                     {
 
-                        cmd.Parameters.AddWithValue("@NomeDistrito", row[1]);  // Column B
+                        cmd.Parameters.AddWithValue("@NomeDistrito", row[0]);  // Column B
 
-                        cmd.Parameters.AddWithValue("@NomeConcelho", row[2]);  // Column D
+                        cmd.Parameters.AddWithValue("@NomeConcelho", row[1]);  // Column D
 
-                        cmd.Parameters.AddWithValue("@NomeFreguesia", row[3]); // Column F
-                        cmd.Parameters.AddWithValue("@NomeLugar", row[4]); // Column F
+                        cmd.Parameters.AddWithValue("@NomeFreguesia", row[2]); // Column F
+                        cmd.Parameters.AddWithValue("@NomeLugar", row[3]); // Column F
 
 
                         cmd.ExecuteNonQuery();

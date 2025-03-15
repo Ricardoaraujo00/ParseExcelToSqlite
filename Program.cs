@@ -8,21 +8,45 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Sqlite;
 using ParseExcelToSqlite.Services;
 using Microsoft.Extensions.DependencyInjection;
-using ParseExcelToSqlite.Seeders; // Add this line to include the DatabaseSeeder class
+using ParseExcelToSqlite.Seeders;
+using ParseExcelToSqlite.Models; // Add this line to include the DatabaseSeeder class
 
 namespace ParseExcelToSqlite
 {
+    
     internal class Program
     {
+        public class Lugar
+        {
+            public string Nome { get; set; }
+        }
+        public class Freguesia
+        {
+            public string Nome { get; set; }
+            public List<Lugar> Lugares { get; set; } = new List<Lugar>();
+        }
+
+        public class Concelho
+        {
+            public string Nome { get; set; }
+            public List<Freguesia> Freguesias { get; set; } = new List<Freguesia>();
+        }
+
+        public class Distrito
+        {
+            public string Nome { get; set; }
+            public List<Concelho> Concelhos { get; set; } = new List<Concelho>();
+        }
         static void Main(string[] args)
         {
             //ProcessarBaseDeDados1Service.Executar();
-            //ProcessarBaseDeDados2.Executar();
-            ProcessarDadosDasDuasTabelas();
+           //ProcessarBaseDeDados2Service.Executar();
+            //ProcessarDadosDasDuasTabelas();
 
-            // DatabaseDbContext dbContext = new DatabaseDbContext(new DbContextOptions<DatabaseDbContext>());
-            // ModelBuilderExtensions.SeedData(dbContext.ModelBuilder);
-            // CriarTabelaFinal();
+
+            
+
+            
             Console.WriteLine("Data transferred successfully!");
         
         }
@@ -30,46 +54,112 @@ namespace ParseExcelToSqlite
 
         public static void ProcessarDadosDasDuasTabelas()
         {
+            var listaDistritos2 = ObterEstruturaDadosTabela2();
+            var listaDistritos1 = ObterEstruturaDadosTabela1();
+            Local locais = new Local();
+
+            foreach (var distrito in listaDistritos2)
+            {
+                Console.WriteLine($"Distrito: {distrito.Nome}");
+                
+                Local localDistrito = new Local()
+                {
+                     
+                }
+                foreach (var concelho in distrito.Concelhos)
+                {
+                    Console.WriteLine($"  Concelho: {concelho.Nome}");
+                    foreach (var freguesia in concelho.Freguesias)
+                    {
+                        Console.WriteLine($"    Freguesia: {freguesia.Nome}");
+                    }
+                }
+            }
+
+        }
+
+        public static List<Distrito> ObterEstruturaDadosTabela1()
+        {
             //CriarTabelaFinal();
             DatabaseDbContext dbContext = new DatabaseDbContext(new DbContextOptions<DatabaseDbContext>());
-            //ModelBuilderExtensions.SeedData(dbContext.);
-            Console.WriteLine($"Quant:{dbContext.DistritosConcelhosFreguesias.Count()}");
-            var dadosTabela1 = dbContext.DistritosConcelhosFreguesias.ToList();
-            var dadosTabela2 = dbContext.Lugares.ToList();
-            var dadosAgrupados = dadosTabela1
-                .GroupBy(d => new { d.CodDistrito, d.CodConcelho })
-                .Select(g => new 
-                {
-                    CodDistrito = g.Key.CodDistrito,
-                    CodConcelho = g.Key.CodConcelho,
-                    Total = g.Count(),
-                    Registos = g.ToList() // Converte o grupo para uma lista, se você quiser acessar os registros individuais
-                }).ToList();
-            foreach (var dado in dadosAgrupados)
-            {
-                Console.WriteLine($"CodDistrito: {dado.CodDistrito}, CodConcelho: {dado.CodConcelho}, Total: {dado.Total}"); 
-            }
-            // foreach (var dado1 in dadosTabela1)
-            // {
-            //     foreach (var dado2 in dadosTabela2)
-            //     {
-            //         if (dado1.NomeDistrito == dado2.NomeDistrito && 
-            //             dado1.NomeConcelho == dado2.NomeConcelho && 
-            //             dado1.NomeFreguesia == dado2.NomeFreguesia)
-            //         {
-            //             var novoLugar = new Lugar
-            //             {
-            //                 NomeDistrito = dado1.NomeDistrito,
-            //                 NomeConcelho = dado1.NomeConcelho,
-            //                 NomeFreguesia = dado1.NomeFreguesia,
-            //                 NomeLugar = dado1.NomeLugar ?? dado2.NomeLugar
-            //             };
-            //             dbContext.Lugares.Add(novoLugar);
-            //         }
-            //     }
-            // }
+            
+            // Obter os dados da tabela original
+            var dados = dbContext.DistritosConcelhosFreguesias.ToList();
 
-            dbContext.SaveChanges();
+            // Criar um dicionário para evitar duplicações e facilitar a busca
+            var distritos = new Dictionary<string, Distrito>();
+
+            foreach (var dado in dados)
+            {
+                // Verifica se o distrito já foi adicionado
+                if (!distritos.ContainsKey(dado.NomeDistrito))
+                {
+                    distritos[dado.NomeDistrito] = new Distrito { Nome = dado.NomeDistrito };
+                }
+
+                var distrito = distritos[dado.NomeDistrito];
+
+                // Verifica se o concelho já existe dentro do distrito
+                var concelho = distrito.Concelhos.FirstOrDefault(c => c.Nome == dado.NomeConcelho);
+                if (concelho == null)
+                {
+                    concelho = new Concelho { Nome = dado.NomeConcelho };
+                    distrito.Concelhos.Add(concelho);
+                }
+
+                // Adiciona a freguesia dentro do concelho correspondente
+                concelho.Freguesias.Add(new Freguesia { Nome = dado.NomeFreguesia });
+            }
+
+            // Lista final com todos os distritos e suas hierarquias
+            var listaDistritos = distritos.Values.ToList();
+            return listaDistritos;
+        }
+
+        public static List<Distrito> ObterEstruturaDadosTabela2()
+        {
+            //CriarTabelaFinal();
+            DatabaseDbContext dbContext = new DatabaseDbContext(new DbContextOptions<DatabaseDbContext>());
+            
+            // Obter os dados da tabela original
+            var dados = dbContext.Lugares.ToList();
+
+            // Criar um dicionário para evitar duplicações e facilitar a busca
+            var distritos = new Dictionary<string, Distrito>();
+
+            foreach (var dado in dados)
+            {
+                // Verifica se o distrito já foi adicionado
+                if (!distritos.ContainsKey(dado.NomeDistrito))
+                {
+                    distritos[dado.NomeDistrito] = new Distrito { Nome = dado.NomeDistrito };
+                }
+
+                var distrito = distritos[dado.NomeDistrito];
+
+                // Verifica se o concelho já existe dentro do distrito
+                var concelho = distrito.Concelhos.FirstOrDefault(c => c.Nome == dado.NomeConcelho);
+                if (concelho == null)
+                {
+                    concelho = new Concelho { Nome = dado.NomeConcelho };
+                    distrito.Concelhos.Add(concelho);
+                }
+
+                // Verifica se o concelho já existe dentro do Concelho
+                var freguesia = concelho.Freguesias.FirstOrDefault(f => f.Nome == dado.NomeFreguesia);
+                if (freguesia == null)
+                {
+                    freguesia = new Freguesia { Nome = dado.NomeFreguesia };
+                    concelho.Freguesias.Add(freguesia);
+                }
+
+                // Adiciona a freguesia dentro do concelho correspondente
+                freguesia.Lugares.Add(new Lugar { Nome = dado.NomeLugar });
+            }
+
+            // Lista final com todos os distritos e suas hierarquias
+            var listaDistritos = distritos.Values.ToList();
+            return listaDistritos;
         }
 
 

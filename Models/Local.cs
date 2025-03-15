@@ -11,7 +11,9 @@ namespace ParseExcelToSqlite.Models
     public class Local
     {
         [Key]
-        public string CodLocal { get; set; }="";
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
+        //public string CodLocal { get; set; }="";
         public int CodNivel { get; set; } = 0;
         public string Nome { get; set; } = "";
         public string DependeDeId { get; set; } = "";
