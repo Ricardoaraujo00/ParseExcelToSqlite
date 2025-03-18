@@ -13,10 +13,11 @@ namespace ParseExcelToSqlite.Services
             // Construtor do serviço
         }
 
-        public static void Executar()
+        public static void Executar(string databasePath)
         {
             string excelFilePath = @"D:\Users\RicardoAraujo\source\repos\ParseExcelToSqlite\DistritosConcelhosFreguesias_CAOP2013_Populacao_Censos2011.xlsx";
-            string sqliteConnectionString = @"Data Source=DistritosConcelhosFreguesias.db;Version=3;";
+            //string sqliteConnectionString = @"Data Source=DistritosConcelhosFreguesias.db;Version=3;";
+            string sqliteConnectionString = @$"Data Source={databasePath};Version=3;";
 
             // Register the ExcelDataReader encoding provider (required for reading Excel files)
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
@@ -31,7 +32,7 @@ namespace ParseExcelToSqlite.Services
                     Console.WriteLine($"Total de linhas no ficheiro Excel: {reader.RowCount}");
                     var result = reader.AsDataSet(new ExcelDataSetConfiguration()
                     {
-                        ConfigureDataTable = (_) => new ExcelDataTableConfiguration() { UseHeaderRow = true }
+                        ConfigureDataTable = (_) => new ExcelDataTableConfiguration() { UseHeaderRow = false } //Esta folha de excel não tem cabeçalho
                     });
 
                     // Assuming data is in the first sheet

@@ -13,10 +13,11 @@ namespace ParseExcelToSqlite.Services
             // Construtor do serviço
         }
 
-        public static void Executar()
+        public static void Executar(string databasePath)
         {
             string excelFilePath = @"D:\Users\RicardoAraujo\source\repos\ParseExcelToSqlite\Lista de Lugares, Freguesias e Oragos.xlsx";
-            string sqliteConnectionString = @"Data Source=DistritosConcelhosFreguesias.db;Version=3;";
+            //string sqliteConnectionString = @"Data Source=DistritosConcelhosFreguesias.db;Version=3;";
+            string sqliteConnectionString = @$"Data Source={databasePath};Version=3;";
 
             // Register the ExcelDataReader encoding provider (required for reading Excel files)
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);

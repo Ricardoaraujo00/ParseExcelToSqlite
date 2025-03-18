@@ -8,20 +8,10 @@ namespace ParseExcelToSqlite.Seeders
     {
         public static void SeedData(DatabaseDbContext dbContext)
         {
-            // Add your seeding logic here
-            if (!dbContext.Nivel.Any())
+            
+             if (!dbContext.Niveis.Any()) // Evita duplicações
             {
-                dbContext.Nivel.AddRange(
-                    new Nivel { Nome = "Iniciante" ,},
-                    new Nivel { Nome = "Intermediário" },
-                    new Nivel { Nome = "Avançado" }
-                );
-                dbContext.SaveChanges();
-            }
-
-             if (!dbContext.Nivel.Any()) // Evita duplicações
-            {
-                dbContext.Nivel.AddRange(
+                dbContext.Niveis.AddRange(
                     new Nivel { Id = 1, Nome = "Nacional" },
                     new Nivel { Id = 2, Nome = "Região" },
                     new Nivel { Id = 3, Nome = "Distrito" },

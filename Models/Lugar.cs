@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ParseExcelToSqlite.Models
 {
-    public class Lugares
+    public class Lugar
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

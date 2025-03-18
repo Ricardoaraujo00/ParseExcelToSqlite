@@ -11,19 +11,28 @@ namespace ParseExcelToSqlite.Controllers
         {
         }
 
-        public DbSet<Local> Local { get; set; }
+        public DbSet<Local> Locais { get; set; }
         public DbSet<DistritosConcelhosFreguesias> DistritosConcelhosFreguesias { get; set; }
-        public DbSet<Lugares> Lugares { get; set; }
-        public DbSet<Nivel> Nivel { get; set; }
+        public DbSet<Lugar> Lugares { get; set; }
+        public DbSet<Nivel> Niveis { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite(connectionString: "Filename=DistritosConcelhosFreguesias.db",
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlite(
+                    connectionString: "Filename=DistritosConcelhosFreguesias.db",
                     sqliteOptionsAction: op =>
                     {
-                        op.MigrationsAssembly(
-                            Assembly.GetExecutingAssembly().FullName);
+                        op.MigrationsAssembly(Assembly.GetExecutingAssembly().FullName);
                     });
+            }
+            //optionsBuilder.UseSqlite(connectionString: "Filename=DistritosConcelhosFreguesias.db",
+            //        sqliteOptionsAction: op =>
+            //        {
+            //            op.MigrationsAssembly(
+            //                Assembly.GetExecutingAssembly().FullName);
+            //        });
             base.OnConfiguring(optionsBuilder);
 
         }
@@ -46,8 +55,8 @@ namespace ParseExcelToSqlite.Controllers
 
         public static void Seed_Nivel(ModelBuilder modelBuilder)
         {
-            if (!modelBuilder.Model.GetEntityTypes().Any(e => e.ClrType == typeof(Nivel)))
-            {
+            //if (!modelBuilder.Model.GetEntityTypes().Any(e => e.ClrType == typeof(Nivel)))
+            //{
                 modelBuilder.Entity<Nivel>().HasData(
                     new Nivel
                     {
@@ -78,14 +87,19 @@ namespace ParseExcelToSqlite.Controllers
                     {
                         Id = 6,
                         Nome = "Freguesia"
-                    },
+                    }, 
                     new Nivel
                     {
                         Id = 7,
+                        Nome = "Freguesia extinta"
+                    },
+                    new Nivel
+                    {
+                        Id = 8,
                         Nome = "Lugar"
                     }
                 );
-            }
+            //}
         }
     }
 }

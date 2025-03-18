@@ -1,0 +1,10 @@
+-- Remove todos os registros
+DELETE FROM Locais;
+
+-- Reinicia o contador AUTOINCREMENT
+DELETE FROM sqlite_sequence WHERE name = 'Locais';
+
+-- (Opcional) Libera espaço em disco
+VACUUM;
+
+

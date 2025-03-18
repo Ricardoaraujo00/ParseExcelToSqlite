@@ -15,13 +15,14 @@ namespace ParseExcelToSqlite.Models
         public int Id { get; set; }
         //public string CodLocal { get; set; }="";
         public int CodNivel { get; set; } = 0;
+        public string Codigo { get; set; } = "";
         public string Nome { get; set; } = "";
-        public string DependeDeId { get; set; } = "";
+        public int DependeDeId { get; set; } = 0;
 
 
 
-        [ForeignKey("DependeDeId")]
-        public Local LocalPai { get; set; } = new(); // Propriedade de navegação opcional
+        // [ForeignKey("DependeDeId")]
+        // public Local LocalPai { get; set; } = new(); // Propriedade de navegação opcional
 
     }
 }
