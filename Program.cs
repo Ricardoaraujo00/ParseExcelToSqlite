@@ -120,18 +120,12 @@ namespace ParseExcelToSqlite
             //Imprimir(listaDCFcomLugares);
             
             Local locais = new Local();
+            Console.WriteLine("Início ProcessarDadosDasDuasTabelas");
             Console.ReadKey();
 
             foreach (var distrito in listaDCFcomLugares)
             {
-                if (distrito.Nome == "Porto") continue;
-                //Se não é ilha passa à frente
-                var listaIlhas = listaDCF.Where(x => x.Nome.Contains("Ilha")).ToList();
-                var distritoIlha = listaIlhas.FirstOrDefault(x => x.Nome.Contains(distrito.Nome));
-                if (distritoIlha == null)
-                {
-                    continue;
-                }
+
 
                 //Console.WriteLine("Prima uma tecla para continuar");
                 //Console.ReadKey();
@@ -141,42 +135,28 @@ namespace ParseExcelToSqlite
 
                 var distritoDependeDeID = 0;
                 
-                var distritoDCF = listaDCF.FirstOrDefault(x=>x.Nome==distrito.Nome);  
+                var distritoDCF = listaDCF.FirstOrDefault(x=>x.Nome==distrito.Nome);
+                //Vou inicializar aqui o localRegiao porque depois, se não fôr uma ilha tenho que ligar o distrito ao Portugal Continental
+                Local localRegiao = new();
+                bool distritoIlha = false;
                 //Se não exite é porque será uma ilha
-                if(distritoDCF==null)
+                if (distritoDCF.Nome.Contains("Ilha"))
                 {
-                    var ilhas = listaDCF.Where(x => x.Nome.Contains("Ilha")).ToList();
-                    distritoDCF = ilhas.FirstOrDefault(x => distrito.Nome.Contains(x.Nome));
-                    if(distritoDCF!=null) //Então é uma ilha
-                    {
-                        var nomeDaRegião = ExtrairConteudoEntreParenteses(distritoDCF.Nome);
-                        Local localRegiao = dbContext.Locais.FirstOrDefault(x => x.Nome.Contains(nomeDaRegião));
-                        if (localRegiao == null)
-                        {
-                            localRegiao = new Local()
-                            {
-                                Codigo = "",
-                                Nome = distrito.Nome,
-                                CodNivel = niveis.FirstOrDefault(x => x.Nome == "Região").Id,
-                                DependeDeId = 0
-                            };
-                            dbContext.Add(localRegiao);
-                            await dbContext.SaveChangesAsync();
-                            Console.WriteLine($"Região[cod - nome]: {localRegiao.Id} - {localRegiao.Nome}");
-                        }
-
-                        //O distrito a ser adicionado a seguir vai depender desta região
-                        distritoDependeDeID = localRegiao.Id;
-
-                        //Altero o nome do distrito para o da tabela DCF
-                        distrito.Nome = RemoverConteudoEntreParenteses(distritoDCF.Nome);
-                    }
+                    distritoIlha = true;
+                    var nivelRegiao = niveis.FirstOrDefault(x => x.Nome == "Região").Id;
+                    var nomeDaRegiao = ExtrairConteudoEntreParenteses(distritoDCF.Nome);
+                    localRegiao = dbContext.Locais.Where(x=>x.CodNivel==nivelRegiao).FirstOrDefault(x => x.Nome.Contains(nomeDaRegiao));
+                        
+                    //O distrito a ser adicionado a seguir vai depender desta região
+                    distritoDependeDeID = localRegiao.Id;                    
                 }
-                
+                else
+                {
+                    //Se não fôr uma ilha o LocalDistro vai depender de Portugal Continental
+                    distritoDependeDeID = dbContext.Locais.FirstOrDefault(x => x.CodNivel == 1).Id;
+                }
 
-                
 
-                
                 //Criar o objecto distrito e adicionar à base de dados e gravar e obter o ID
                 Local localDistrito = new Local()
                 {
@@ -192,9 +172,12 @@ namespace ParseExcelToSqlite
                 //Depois fazer igual para os restantes
                 foreach (var concelho in distrito.Concelhos)
                 {
+                    string codigo = "";                    
+                    var concelhoDCF = distritoDCF.Concelhos.FirstOrDefault(y => y.Nome.ToUpper() == concelho.Nome.ToUpper());
+                    if(concelhoDCF==null) distritoDCF.Concelhos.FirstOrDefault(y => concelho.Nome.ToUpper().Contains(y.Nome.ToUpper()));
                     Local localConcelho = new Local()
                     {
-                        Codigo = listaDCF.FirstOrDefault(x=>x.Nome.Contains(distrito.Nome)).Concelhos.FirstOrDefault(y=>y.Nome==concelho.Nome).Codigo,
+                        Codigo = concelhoDCF.Codigo,
                         Nome = concelho.Nome,
                         CodNivel = niveis.FirstOrDefault(x => x.Nome == "Concelho").Id,
                         DependeDeId = localDistrito.Id // O concelho depende do distrito que foi criado anteriormente
@@ -206,13 +189,13 @@ namespace ParseExcelToSqlite
                     foreach (var freguesia in concelho.Freguesias)
                     {
                         //Ir buscar à tabela 1 as freguesias do corrente concelho que são uniões de freguesia
-                        List<Freguesia> freguesiasDCF = listaDCF.FirstOrDefault(x => x.Nome == localDistrito.Nome)
-                                                        .Concelhos.FirstOrDefault(y => y.Nome == concelho.Nome)
+                        List<Freguesia> freguesiasDCF = concelhoDCF
                                                         .Freguesias
-                                                        .Where(f => f.Nome.Contains("União") || f.Nome.Contains(" e "))
+                                                        .Where(f => f.Nome.ToUpper().Contains("União") || f.Nome.ToUpper().Contains(" e "))
                                                         .ToList();
-                        var freguesiaEmUniao = freguesiasDCF.FirstOrDefault(f => f.Nome.Contains(freguesia.Nome));
-                        if(freguesiaEmUniao==null && freguesia.Nome.Contains("("))
+                        Freguesia freguesiaEmUniao = null;
+                        if(freguesiasDCF!=null) freguesiaEmUniao = freguesiasDCF.FirstOrDefault(f => f.Nome.ToUpper().Contains(freguesia.Nome.ToUpper()));
+                        if (freguesiaEmUniao==null && freguesia.Nome.Contains("("))
                         {
                             // Extrai o conteúdo fora e dentro dos parênteses
                             string conteudoForaParenteses;
@@ -238,24 +221,27 @@ namespace ParseExcelToSqlite
                         var FreguesiaDependedeID = 0;
                         var codigoDaFreguesia = "";
                         var NivelDaFreguesia = 0;
-                        //Adicionar união de freguesias se existir
+                        //Adicionar união de freguesias se existir o nome da freguua nessa união
                         if (freguesiaEmUniao!=null)
                         {
                             Console.WriteLine($"Freguesia pertence a união de freguesias: {freguesiaEmUniao.Nome}");
-                            var localUniaoDeFreguesias = new Local()
+                            var uniaoDeFreguesias = dbContext.Locais.FirstOrDefault(x => x.Nome == freguesiaEmUniao.Nome);
+                            if(uniaoDeFreguesias==null)//Se não existir a união de freguesias registada na base de dados vai ser feito o registo
                             {
-                                Codigo=freguesiaEmUniao.Codigo,
-                                Nome = freguesiaEmUniao.Nome, // Preencher com o nome da freguesia encontrada ou o nome original
-                                CodNivel = niveis.FirstOrDefault(x => x.Nome == "União de Freguesias").Id,
-                                DependeDeId = localConcelho.Id // A freguesia depende do concelho que foi criado anteriormente
-                            };
-                            dbContext.Add(localUniaoDeFreguesias);
-                            await dbContext.SaveChangesAsync();
-                            Console.WriteLine($"União de Freguesia[id - cod - nome - dependeDeId]: {localUniaoDeFreguesias.Id} - {localUniaoDeFreguesias.Codigo} - {localUniaoDeFreguesias.Nome} - {localUniaoDeFreguesias.DependeDeId}");
-
+                                uniaoDeFreguesias = new Local()
+                                {
+                                    Codigo = freguesiaEmUniao.Codigo,
+                                    Nome = freguesiaEmUniao.Nome, // Preencher com o nome da freguesia encontrada ou o nome original
+                                    CodNivel = niveis.FirstOrDefault(x => x.Nome == "União de Freguesias").Id,
+                                    DependeDeId = localConcelho.Id // A freguesia depende do concelho que foi criado anteriormente
+                                };
+                                dbContext.Add(uniaoDeFreguesias);
+                                await dbContext.SaveChangesAsync();
+                                Console.WriteLine($"União de Freguesia[id - cod - nome - dependeDeId]: {uniaoDeFreguesias.Id} - {uniaoDeFreguesias.Codigo} - {uniaoDeFreguesias.Nome} - {uniaoDeFreguesias.DependeDeId}");
+                            }
 
                             //A freguesia verdadeira depende da união de freguesias
-                            FreguesiaDependedeID = localUniaoDeFreguesias.Id;
+                            FreguesiaDependedeID = uniaoDeFreguesias.Id;
                             //E se está numa união é porque foi extinta
                             NivelDaFreguesia = niveis.FirstOrDefault(x => x.Nome == "Freguesia extinta").Id;
 
@@ -265,12 +251,11 @@ namespace ParseExcelToSqlite
                             //A frequesia verdadeira depende do concelho
                             FreguesiaDependedeID = localConcelho.Id;
                             //E nesse caso tem um código de freguesia
-                            var tempFreguesiaCod = listaDCF.FirstOrDefault(x => x.Nome == distrito.Nome)
-                                                .Concelhos.FirstOrDefault(y => y.Nome == concelho.Nome)
+                            var tempFreguesia = concelhoDCF
                                                 .Freguesias.FirstOrDefault(z => z.Nome == freguesia.Nome);
-                            if(tempFreguesiaCod!=null)
+                            if(tempFreguesia!=null)
                             {
-                                codigoDaFreguesia = tempFreguesiaCod.Codigo;
+                                codigoDaFreguesia = tempFreguesia.Codigo;
                             }
                             //E está no nível de freguesia
                             NivelDaFreguesia = niveis.FirstOrDefault(x => x.Nome == "Freguesia").Id;
@@ -286,7 +271,7 @@ namespace ParseExcelToSqlite
                         };
                         dbContext.Add(localFreguesia);
                         await dbContext.SaveChangesAsync();
-                        Console.WriteLine($"Freguesia[id - cod - nome - dependeDeId]: {localFreguesia.Id} - {localFreguesia.Codigo} - {localFreguesia.Nome} - {localFreguesia.DependeDeId}");
+                        //Console.WriteLine($"Freguesia[id - cod - nome - dependeDeId]: {localFreguesia.Id} - {localFreguesia.Codigo} - {localFreguesia.Nome} - {localFreguesia.DependeDeId}");
 
                         
                         foreach (var lugar in freguesia.Lugares)
@@ -300,7 +285,7 @@ namespace ParseExcelToSqlite
                             };
                             dbContext.Add(localLugarDeFreguesia);
                             await dbContext.SaveChangesAsync();
-                            Console.WriteLine($"Lugar [id - cod - nome - dependeDeId]: {localLugarDeFreguesia.Id} - {localLugarDeFreguesia.Codigo} - {localLugarDeFreguesia.Nome} - {localLugarDeFreguesia.DependeDeId}");
+                            //Console.WriteLine($"Lugar [id - cod - nome - dependeDeId]: {localLugarDeFreguesia.Id} - {localLugarDeFreguesia.Codigo} - {localLugarDeFreguesia.Nome} - {localLugarDeFreguesia.DependeDeId}");
                             
                         }
                         
@@ -315,7 +300,7 @@ namespace ParseExcelToSqlite
             //CriarTabelaFinal();
             
             // Obter os dados da tabela original
-            var dados = dbContext.DistritosConcelhosFreguesias.ToList();
+            var dados = dbContext.DistritosConcelhosFreguesias.Where(x=>x.NomeDistrito.Contains("Ilha")).ToList();
 
             // Criar um dicionário para evitar duplicações e facilitar a busca
             var distritos = new List<Distrito>();
@@ -394,7 +379,7 @@ namespace ParseExcelToSqlite
             //CriarTabelaFinal();
             
             // Obter os dados da tabela original
-            var dados = dbContext.Lugares.ToList();
+            var dados = dbContext.Lugares.Where(x=>x.Id> 28387).ToList();
 
             // Criar um dicionário para evitar duplicações e facilitar a busca
             var distritos = new List<Distrito>();

@@ -57,7 +57,33 @@ namespace ParseExcelToSqlite.Controllers
         {
             //if (!modelBuilder.Model.GetEntityTypes().Any(e => e.ClrType == typeof(Nivel)))
             //{
-                modelBuilder.Entity<Nivel>().HasData(
+            modelBuilder.Entity<Local>().HasData(
+                    new Local
+                    {
+                        Id = 1,
+                        CodNivel = 1,
+                        Codigo = "PT1",
+                        Nome = "Portugal Continental",
+                        DependeDeId = 0
+                    },
+                    new Local
+                    {
+                        Id = 2,
+                        CodNivel = 2,
+                        Codigo = "PT2",
+                        Nome = "Região Autónoma dos Açores",
+                        DependeDeId = 1
+                    },
+                    new Local
+                    {
+                        Id = 3,
+                        CodNivel = 2,
+                        Codigo = "PT3",
+                        Nome = "Região Autónoma da Madeira",
+                        DependeDeId = 1
+                    }
+                );
+            modelBuilder.Entity<Nivel>().HasData(
                     new Nivel
                     {
                         Id = 1,
