@@ -71,18 +71,28 @@ namespace ParseExcelToSqlite
                 //ProcessarBaseDeDados1Service.Executar(databasePath);
                 //ProcessarBaseDeDados2Service.Executar(databasePath);
                 //var distritos = ObterEstruturaDadosTabela1(true);
-                ProcessarDadosDasDuasTabelas(dbContext);
                 //CriarTabelaFinal();
+                //ProcessarDadosDasDuasTabelas(dbContext);
+                //CocatenarCodigosIlhas(dbContext);
             }
-
-
-
-
-
-
 
             Console.WriteLine("Data transferred successfully!");
         
+        }
+
+        public static async void CocatenarCodigosIlhas(DatabaseDbContext dbContext)
+        {
+            var locaisAConcatenar = dbContext.Locais.Where(x=>x.Id>= 36499).ToList();
+            foreach (var local in locaisAConcatenar)
+            {
+                var localPai = dbContext.Locais.FirstOrDefault(x => x.Id == local.DependeDeId);
+                if (localPai != null)
+                {
+                    local.Codigo = localPai.Codigo + local.Codigo;
+                    dbContext.Update(local);
+                    await dbContext.SaveChangesAsync();
+                }
+            }
         }
 
         static string RemoverConteudoEntreParenteses(string input)
